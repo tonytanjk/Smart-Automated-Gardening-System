@@ -5,3 +5,9 @@ Features include
 4. Error Handling Indicators
 5. Servo Motor Rotation (To rotate between sets of 4 hydroponic setup)
 6. Interrupt Mode Change Sequence for functions
+
+
+How it Works:
+RGB LED is using PWMout to control led color and state
+Servo is using PWMout to control servo motor
+Moisture Sensor using DigitalOut state
