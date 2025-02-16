@@ -21,30 +21,17 @@ This project provides a web-based dashboard for monitoring and controlling vario
 
 2. **Software**:
     - Python 3.x
-    - Flask (`pip install flask`)
-    - PySerial (`pip install pyserial`)
+    - Flask
+    - PySerial
     - SQLite3 (for local database management)
     - HTML/CSS/JavaScript for frontend
 
-### Serial Communication
+### Install Dependencies
 
-The system reads data from a serial-connected device (such as an Arduino or a microcontroller) via a UART (Universal Asynchronous Receiver-Transmitter) connection. The backend listens for incoming data and updates the parameters such as temperature, humidity, and light intensity.
-
-### Database Setup
-
-1. Install SQLite3 to store bay configurations.
-2. The database stores plant bay information such as plant types, temperature ranges, pH ranges, and water levels.
-
-### Configuration
-
-In the Python file `app.py`, adjust the following configurations as needed:
-
-- **Serial Port**: Modify the serial port (`/dev/ttyS0`) to match your system's configuration.
-- **Baud Rate**: The default baud rate is set to 9600. Ensure that this matches the baud rate of your serial device.
-
-### Running the Project
-
-1. **Clone the repository** (if applicable) and navigate to the project directory.
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
+Run the following commands to install the required Python libraries ( in a python virtual environmnet):
+Python Virtual Environment: https://www.raspberrypi.com/documentation/computers/os.html#python-on-raspberry-pi
+```bash
+pip install flask
+pip install pyserial
+pip install sqlite3
+pip install flask-socketio
