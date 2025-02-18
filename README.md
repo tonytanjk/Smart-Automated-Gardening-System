@@ -19,17 +19,16 @@ This project provides a web-based dashboard for monitoring and controlling vario
 ### Requirements
 
 #### Hardware
-- **Raspberry Pi** (any model with GPIO and serial support)
+- **Raspberry Pi** (any model with GPIO, serial and Wifi or Ethernet support)
 - **Sensors**:
   - LDR (Light Dependent Resistor) for light intensity
   - DHT11/DHT22 for temperature and humidity
   - pH sensor
-  - Water level sensor
-  - Moisture sensor
 - **Actuators**:
-  - Water pump
+  - LCD Display   
   - Servo motor
   - LED grow lights
+  - Keypad
 
 #### Software
 - **Python 3.x**
