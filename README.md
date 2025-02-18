@@ -2,9 +2,7 @@
 
 <p align="center">
   <img src="dashboard.png" alt="Dashboard Screenshot" width="250" height="250">
-</p>
 
-<p align="center">
   <img src="prototype.jpg" alt="Prototype Image" width="200" height="200">
 </p>
 
