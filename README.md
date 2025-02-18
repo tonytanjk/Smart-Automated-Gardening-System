@@ -119,11 +119,13 @@ http://<raspberry_pi_ip>:5000
 - **👥 Multi-User Support**: Implement user authentication for different access levels.
 
 ## 📝 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Baby Licenses we don't have them sadly. I know we can make them but this project is honestly making me NUTS
 
 ## 👨‍💻 Contributors
-- **Your Name** (Project Lead)
-- **Additional Contributors** (if any)
+- **Tony** (Project Lead)
+- **Additional Contributors**
+- **EHgitlab**
+- **emmateoh14**
 
 ## 📩 Support
 For issues and feature requests, please open an [issue](https://github.com/yourusername/hydroponics-dashboard/issues) on GitHub.
