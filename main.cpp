@@ -158,26 +158,14 @@ Thread SensorCheckThread;
 void sensorCheckThread() {
     while(true) {
         if (temperature > 27 && lux <= 200) {
-            buzzer = 0.5;              // 50% duty cycle: the buzzer sounds at 440Hz
-            thread_sleep_for(500);     // Sound for 500ms
-            buzzer = 0.0;              // No output: silent
-            thread_sleep_for(50);     // Silence for 500ms
+            buzzer = 0.5;              
+            thread_sleep_for(500);     
+            buzzer = 0.0;
+            thread_sleep_for(50);    
         } else {
-            buzzer = 0; // No buzzer if conditions are not met
+            buzzer = 0; 
         }
         ThisThread::sleep_for(1000ms); // Periodic check delay
-    }
-}
-
-Thread uSARTsendThread;
-void USARTsendThread(){
-    while(true){
-        serialWriteMutex.lock();  // Lock serial write access
-        TempHumiUSART();
-        LDR_USART();
-        pH_USART();
-        serialWriteMutex.unlock();  // Unlock serial write access
-        ThisThread::sleep_for(5000ms);
     }
 }
 
@@ -189,33 +177,6 @@ void button1_pressed() {
 void button2_pressed() {
     setRGB(0, 1, 0);  // Blue LED to indicate moving backward
     movingBackward = true;
-}
-
-// Handle USART commands (for remote control)
-Thread UsartCommandThread;
-void UsartCommandRPI() {
-    char command;
-    serial.write("STM32 USART Ready...\n", 21);
-
-    while (true) {
-        // Check if data is available to read (non-blocking)
-        if (serial.readable()) {
-            serialReadMutex.lock();  // Lock serial read access
-            int numBytesRead = serial.read(&command, 1);  // Read a single byte
-            serialReadMutex.unlock();  // Unlock serial read access
-
-            if (numBytesRead > 0) {
-                printf("Received: %c\n", command);
-                // Respond to commands
-                if (command == 'F') {
-                    movingForward = true;
-                } else if (command == 'B') {
-                    movingBackward = true;
-                }
-            }
-        }
-        ThisThread::sleep_for(10ms);  // Small delay to prevent 100% CPU usage
-    }
 }
 
 void servoControl() {
@@ -263,29 +224,22 @@ void UsartThreadFunction() {
         ThisThread::sleep_for(1s);
     }
 
-    }
+}
 
 // Main entry point
-int main() {
-                buzzer = 0.5;              // 50% duty cycle: the buzzer sounds at 440Hz
-            thread_sleep_for(500);     // Sound for 500ms
-            buzzer = 0.0;  
+int main() {  
     // Initialize serial communication
     serial.baud(9600);  // Ensure the baud rate matches
     serial.format(8, SerialBase::None, 1);  // 8 data bits, no parity, 1 stop bit
     buzzer.period(1.0 / 440.0);
     button1.fall(&button1_pressed);  // Detect falling edge (button press)
-    button2.fall(&button2_pressed);  // Detect falling edge (button press)
+    button2.fall(&button2_pressed);  
 
     // Start sensor check thread
     SensorCheckThread.start(sensorCheckThread);
     
-    // Start USART send thread
-    //uSARTsendThread.start(USARTsendThread);
+    //Start Usart Thread
     usartThread.start(UsartThreadFunction);
-
-    // Start USART command thread
-    //UsartCommandThread.start(UsartCommandRPI);
 
     // Start servo control in main loop
     servoControl();
