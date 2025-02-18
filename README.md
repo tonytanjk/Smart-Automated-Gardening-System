@@ -10,10 +10,9 @@ This project provides a web-based dashboard for monitoring and controlling vario
 - **📊 System Overview**: Check important parameters like pH level, water level, and pump status.
 - **🌱 Bay Management**: Manage and track multiple plant bays, each with its own environmental settings and plant types.
 - **🔄 Automated Data Updates**: The dashboard fetches updated sensor data every few seconds.
-- **⚙️ Sensor Threshold Configuration**: Set and adjust thresholds for different sensors to automate actions.
-- **💡 Pump and Light Control**: Manually or automatically control water pumps and grow lights.
-- **🛠 First-Time Setup Wizard**: A guided setup process for configuring the hydroponics system.
 - **📱 User-Friendly Web Interface**: Responsive design with easy navigation.
+- **🛠️ Remote Control**: Control system components such as water pumps, fans, and lights through the web interface. (Only Servo for now)
+- **🔔 Alert System**: Get notified when sensor readings exceed predefined thresholds. (Only Buzzer to notify users currently)
 
 ## 📦 Setup Instructions
 
@@ -117,6 +116,11 @@ http://<raspberry_pi_ip>:5000
 - **☁️ Cloud Data Storage**: Sync data with a cloud database for remote access.
 - **💧 Automated Nutrient Distribution**: Enhance automation with controlled nutrient delivery.
 - **👥 Multi-User Support**: Implement user authentication for different access levels.
+- **💡 Pump and Light Control**: Manually or automatically control water pumps and grow lights.
+- **🛠 First-Time Setup Wizard**: A guided setup process for configuring the hydroponics system.
+- **⚙️ Sensor Threshold Configuration**: Set and adjust thresholds for different sensors to automate actions.
+
+
 
 ## 📝 License
 Baby Licenses we don't have them sadly. I know we can make them but this project is honestly making me NUTS
