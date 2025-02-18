@@ -1,7 +1,13 @@
 # Hydroponics Dashboard
 
-![alt text](dashboard.png)
-![alt text](prototype.jpg)
+<p align="center">
+  <img src="dashboard.png" alt="Dashboard Screenshot" width="200">
+</p>
+
+<p align="center">
+  <img src="prototype.jpg" alt="Prototype Image" width="200">
+</p>
+
 This project provides a web-based dashboard for monitoring and controlling various environmental parameters in a hydroponic farming system. It uses Flask as a backend server and communicates with various sensors (e.g., temperature, humidity, light intensity) through a Raspberry Pi. The data from these sensors is collected via a serial connection and displayed on the dashboard in real-time.
 
 ## Features
