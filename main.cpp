@@ -1,211 +1,246 @@
+#include <cstdio>
 #undef __ARM_FP
-// Declaration of all Dependency Files for Code Functionality
 #include "mbed.h"
-#include "DHT.h"
-#include "keypad.h"
+#include "DHT11.h"
 #include "lcd.h"
-#include "SRF05.h"
+#include "keypad.h"
+#define WAIT_TIME_MS_0 100
+#define WAIT_TIME_MS_1 50
+#define VREF 3.3f  // Reference Voltage for LDR
 
-// Definition of All Pins used for project 
-#define DHT_PIN PA_0 //Temp Humidity Sensor Pin
-#define buzz PA_1
-#define Moist PA_1
-// Define the pins for the SRF05 sensor
-#define TRIG_PIN PA_4
-#define ECHO_PIN PA_1
+#define MAX_ADC 4095.0f  // 12-bit ADC range
+#define A_CONST 500000.0f  // Experimentally determined constant
+#define B_CONST 1.0f  // Experimentally determined constant
 
-//______________________Keypad________________________
-// Define row and column pins (Refer to Keypad Code in MAPP LAB)
-#define ROW1 PA_0
-#define ROW2 PA_1
-#define ROW3 PA_2
-#define ROW4 PA_3
-#define COL1 PA_4
-#define COL2 PA_5
-#define COL3 PA_6
-#define COL4 PA_7
+// Sensor & Actuator Pin Assignments
+#define DHTPIN     PA_4    // DHT11 Pin
+#define LED_RED    PB_0  // Red
+#define LED_GREEN  PB_1  // Green 
+#define LED_BLUE   PB_2  // Blue 
+#define TRIG_PIN   PA_3  // Ultrasonic Sensor TRIG pin
+#define ECHO_PIN   PA_2  // Ultrasonic Sensor ECHO pin
+#define BUZZER_PIN PA_1  // Buzzer for alerts
+#define SERVO_Reverse_PIN  PA_6    // Servo Motor PWM pin
+#define SERVO_PIN  PA_7    // Servo Motor PWM pin
+#define bd_btn1    PA_15   // Button 1
+#define BUTTON2    PC_12   // Button 2
+#define LDR_DO     PD_2    //LDR_Digital Output
+#define LDR_AO     PA_0    //LDR_Analog Output
+#define FAN        PA_3    //Fan Output to cool plants
+#define pH         PC_1    // pH Sensor Output
 
-// Declare row and column pins as DigitalOut and DigitalIn
-DigitalOut rows[] = {DigitalOut(ROW1), DigitalOut(ROW2), DigitalOut(ROW3), DigitalOut(ROW4)};
-DigitalIn cols[] = {DigitalIn(COL1), DigitalIn(COL2), DigitalIn(COL3), DigitalIn(COL4)};
-
-// Keypad mapping
-char keys[4][4] = {
-    {'1', '2', '3', 'A'},
-    {'4', '5', '6', 'B'},
-    {'7', '8', '9', 'C'},
-    {'*', '0', '#', 'D'}
-};
-
-// Function to scan the keypad
-char scanKeypad() {
-    for (int row = 0; row < 4; row++) {
-        // Set all rows to HIGH
-        for (int i = 0; i < 4; i++) {
-            rows[i] = 1;
-        }
-
-        // Set the current row to LOW
-        rows[row] = 0;
-
-        // Check each column
-        for (int col = 0; col < 4; col++) {
-            if (cols[col] == 0) {  // If a button is pressed
-                wait_us(20000);   // Debounce delay
-                if (cols[col] == 0) {  // Confirm the button is still pressed
-                    return keys[row][col];
-                }
-            }
-        }
-    }
-    return '\0';  // Return null character if no key is pressed
-}
-//_____________________Keypad________________________
-
-// ALL Declarations for Inputs and Outputs
-
-//Output:
+//  Initializing Components 
+DHT11 dht(DHTPIN);
+DigitalOut fan(FAN);
+DigitalOut red(LED_RED);
+DigitalOut green(LED_GREEN);
+DigitalOut blue(LED_BLUE);
+PwmOut buzzer(BUZZER_PIN);
 DigitalOut trig(TRIG_PIN);
-DigitalOut buzzer(buzz);
-AnalogIn MoistSense(Moist);
-
-//Input:
 DigitalIn echo(ECHO_PIN);
-DigitalIn OnBdButton1(PA_1);
-DigitalIn OnBdButton2(PA_6);
-DigitalIn YellowBtn(PA_1);
-DigitalIn GreenBtn(PA_1);
+InterruptIn button1(bd_btn1);
+InterruptIn button2(BUTTON2);
+//LDR Init
+DigitalIn LDRSensor_DO(LDR_DO);
+AnalogIn LDRSensor_AO(LDR_AO);
+AnalogIn pHSensor(pH);
+//DigitalIn button3(BUTTON3);
+PwmOut servo(SERVO_PIN);
+PwmOut reverse_servo(SERVO_Reverse_PIN);
 
-//Dependency Declarations
 Timer timer;
-DHT dht(DHT_PIN, DHT11); 
+Mutex serialWriteMutex;
+Mutex serialReadMutex;
 
-//Global Variables for code Usage
-bool SenseHealth = false; //Sensor Check Pass/Fail Bool
-int THCk, USCk, KPCk, MTCk; // Temperature Pass/Fail Bool
+// Create a serial object for USART communication (using PB6 for TX and PB7 for RX)
+UnbufferedSerial serial(PB_6, PB_7); // Define the serial port for PB6 (TX) and PB7 (RX)
+int buttonPressed = 0;
+int temperature = 0;
+int humidity = 0;
+int lux = 0;
+int pHValue = 0;
+int raw_adc_value;
 
+// Servo Motor Rotation  
+bool movingForward = false;  // To track if forward movement is triggered
+bool movingBackward = false;  // To track if reverse movement is triggered
 
-void SensorInit(){
-//TODO Erika
+//Repeating Functions
+//  Function for RGB LED 
+void setRGB(bool r, bool g, bool b) {
+    red = r;
+    green = g;
+    blue = b;
 }
 
-
-void TempHumiCheck(){
-    int err = dht.readData();  // Read temperature and humidity from the sensor
-    if (err == ERROR_NONE) {
-        printf("Temperature: %.1f°C\n", dht.ReadTemperature(CELCIUS));
-        printf("Humidity: %.1f%%\n", dht.ReadHumidity());
-        THCk = 1;
-        } 
-    else 
-    {
-        printf("Error: %d\n", err);
-        }
-    }
-
-float readMoisture() {
-    // Read the analog value (0.0 to 1.0 corresponding to 0-3.3V)
-    float moistureValue = MoistSense.read();
-    // Convert to percentage
-    float moisturePercentage = moistureValue * 100.0;
-    return moisturePercentage;
+// Function for Servo Motor 
+void move_forward() {
+    servo.pulsewidth(0.001);  // Forward direction for left wheel
+    reverse_servo.pulsewidth(0.003); // Forward direction for right wheel
+    ThisThread::sleep_for(250ms);  // Move for a short time
+    servo.pulsewidth(0.0015); // Stop left wheel (neutral)
+    reverse_servo.pulsewidth(0.0015); // Stop right wheel (neutral)
 }
 
-float measureDistance() {
-    // Send a 10us pulse to trigger
-    trig = 1;
-    wait_us(10);  // Pulse width = 10 microseconds
-    trig = 0;
+void move_backward() {
+    servo.pulsewidth(0.003);  // Reverse direction for left wheel
+    reverse_servo.pulsewidth(0.001); // Reverse direction for right wheel
+    ThisThread::sleep_for(250ms);  // Move for a short time
+    servo.pulsewidth(0.0015); // Stop left wheel (neutral)
+    reverse_servo.pulsewidth(0.0015); // Stop right wheel (neutral)
+}
 
-    // Wait for echo to go HIGH
-    while (echo.read() == 0);
+// Function to Read Ultrasonic Sensor (plant height) 
+float getUltrasonicDistance() {
+    trig = 0; //trig low 
+    wait_us(2);
+    trig = 1; //trig high 
+    wait_us(10);
+    trig = 0; //trig low 
 
-    // Start the timer when echo goes HIGH
-    timer.reset();
     timer.start();
-
-    // Wait for echo to go LOW
-    while (echo.read() == 1);
-
-    // Stop the timer
+    while (echo == 0);  // Wait for echo signal to start
+    timer.reset();
+    while (echo == 1);  // Measure how long the echo signal is HIGH
     timer.stop();
 
-    // Calculate distance in cm (duration in microseconds / 58 = distance in cm)
-    float distance = timer.elapsed_time().count() / 58.0;
+    float duration = timer.elapsed_time().count();
+    return (duration/2) / 29.1;  // Convert to cm
+}
 
-    return distance;
+// Temperature and Humidity Code
+void TempHumiUSART(){
+    int result = dht.readTemperatureHumidity(temperature, humidity);
+    if (result == 0) { // If reading was successful
+        char tempBuffer[50];
+        char humidityBuffer[50];
+        
+        int tempLen = sprintf(tempBuffer, "Temperature: %d C\n", temperature);
+        int humidityLen = sprintf(humidityBuffer, "Humidity: %d %%\n", humidity);
+        serial.write(tempBuffer, tempLen);
+        serial.write(humidityBuffer, humidityLen);
     }
+}
+float adcToLux() {
+    float adc_value = LDRSensor_AO.read();  
+    raw_adc_value = adc_value * 4095;
 
-void UltraSenseCheck(){
-    float Ultrasonic_Dist = measureDistance();
-    if(Ultrasonic_Dist == NULL || Ultrasonic_Dist < 0){
-        printf("Check Ultrasonic Sensor!!");
-    }
-    else{
-        USCk = 1;
-        printf("Ultrasonic Test Passed");
+
+    // Convert ADC value to lux using the empirical formula
+    int lux = A_CONST * pow(raw_adc_value, -B_CONST);
+    
+    return lux;
+}
+// LDR Code
+void LDR_USART(){
+    float adc_value = LDRSensor_AO.read();  
+    int lux = adcToLux();
+    char luxBuffer[50];
+    int luxLength = sprintf(luxBuffer, "Lux: %d\n", lux);                       
+    serial.write(luxBuffer, luxLength);  
+}
+
+// pH Sensor Code
+float read_ph_level() {
+    float voltage = pHSensor.read() * 3.3;  
+    float pHValue = (voltage * 14.0) / 3.3;  // (needs calibration)
+    return pHValue;
+}
+void pH_USART(){
+    char pHBuffer[50];
+    int pHValue = read_ph_level();
+    int pHLength = sprintf(pHBuffer, "pH: %d\n", pHValue);                       
+    serial.write(pHBuffer, pHLength);  
+}
+
+// Sensor Check Thread (for buzzer logic)
+Thread SensorCheckThread;
+void sensorCheckThread() {
+    while(true) {
+        if (temperature > 27 && lux <= 200) {
+            buzzer = 0.5;              
+            thread_sleep_for(500);     
+            buzzer = 0.0;
+            thread_sleep_for(50);    
+        } else {
+            buzzer = 0; 
+        }
+        ThisThread::sleep_for(1000ms); // Periodic check delay
     }
 }
 
-void KeyPadCheck(){
-    if(KPCk == NULL || KPCk == 0 ){
-    printf("KeyPad Test, Press a key");
-    while(true){
-    char key = scanKeypad();
-    if (key != '\0') {  // If a key is detected
-    printf("Key Pressed: %c\n", key);
-    KPCk = 1;
-    }
-    break;
-    }
-    }
+void button1_pressed() {
+    setRGB(1, 0, 0);  // Red LED to indicate moving forward
+    movingForward = true;
 }
 
-void MoistCheck(){
-    if(MTCk == NULL || MTCk == 0 ){
-        float data = readMoisture();
-        if(data <0){
-            printf("Check Moisture Sensor");
-        }
-        else{
-            printf("Moisture Test Passed");
-            SenseHealth = true;
-            return;
-        }
-    }
+void button2_pressed() {
+    setRGB(0, 1, 0);  // Blue LED to indicate moving backward
+    movingBackward = true;
 }
 
-void SensorHealthChk(){
-    if (SenseHealth == false){
-        if (THCk == 0 || THCk == NULL){ //Prevent Continuous Check if passed
-            TempHumiCheck();
-        }
-        if(USCk == 0 || USCk == NULL){
-            UltraSenseCheck();
-        }
-        if(KPCk == 0 || KPCk == NULL){
-            KeyPadCheck();
-        }
-        if(MTCk == 0 || MTCk == NULL){
-            MoistCheck();
-        }
-    }
-    else{
-        printf("Sensor Health Check Passed");
-    }
-}
+void servoControl() {
+    servo.period(0.15);  // 20ms period for servo control
+    reverse_servo.period(0.15);
 
-void ErrorHandle(){
-    //TODO
-}
-
-
-
-// main() runs in its own thread in the OS
-int main()
-{
     while (true) {
-
+        if (movingForward) {
+            move_forward();
+            movingForward = false;
+        } else if (movingBackward) {
+            move_backward();
+            movingBackward = false;
+        }
     }
 }
 
+Thread usartThread;
+void UsartThreadFunction() {
+    char command;
+    //serial.write("STM32 USART Ready...\n", 21);
+    while (true) {
+        // Check if data is available to read (non-blocking)
+        if (serial.readable()) {
+            serialReadMutex.lock();  // Lock serial read access
+            int numBytesRead = serial.read(&command, 1);  // Read a single byte
+            serialReadMutex.unlock();  // Unlock serial read access
+
+            if (numBytesRead > 0) {
+                printf("Received: %c\n", command);
+                // Respond to commands
+                if (command == 'F') {
+                    movingForward = true;
+                } else if (command == 'B') {
+                    movingBackward = true;
+                }
+            }
+        }        
+        // Regularly send sensor data
+        serialWriteMutex.lock();  // Lock serial write access
+        TempHumiUSART();
+        LDR_USART();
+        pH_USART();
+        serialWriteMutex.unlock();  // Unlock serial write access
+        ThisThread::sleep_for(1s);
+    }
+
+}
+
+// Main entry point
+int main() {  
+    // Initialize serial communication
+    serial.baud(9600);  // Ensure the baud rate matches
+    serial.format(8, SerialBase::None, 1);  // 8 data bits, no parity, 1 stop bit
+    buzzer.period(1.0 / 440.0);
+    button1.fall(&button1_pressed);  // Detect falling edge (button press)
+    button2.fall(&button2_pressed);  
+
+    // Start sensor check thread
+    SensorCheckThread.start(sensorCheckThread);
+    
+    //Start Usart Thread
+    usartThread.start(UsartThreadFunction);
+
+    // Start servo control in main loop
+    servoControl();
+}
